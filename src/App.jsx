@@ -33,14 +33,15 @@ export default function App() {
   }, []);
 
   async function addTask(event) {
-    event.preventDefault();
+  event.preventDefault();
 
-    const cleanTitle = title.trim();
-    if (!cleanTitle || saving) return;
+  const cleanTitle = title.trim();
+  if (!cleanTitle || saving) return;
 
-    setSaving(true);
-    setError("");
+  setSaving(true);
+  setError("");
 
+  try {
     const { data, error } = await supabase
       .from("tasks")
       .insert({ title: cleanTitle })
@@ -48,52 +49,48 @@ export default function App() {
       .single();
 
     if (error) {
-      setError(error.message);
-    } else {
-      setTasks((current) => [data, ...current]);
-      setTitle("");
+      console.error("Supabase insert error:", error);
+      setError(`Supabase insert failed: ${error.message}`);
+      return;
     }
 
+    console.log("Supabase saved task:", data);
+    setTasks((current) => [data, ...current]);
+    setTitle("");
+  } catch (err) {
+    console.error("Unexpected insert error:", err);
+    setError("Unexpected error while saving the task.");
+  } finally {
     setSaving(false);
   }
-
-  async function toggleTask(task) {
-    setError("");
-
-    const { data, error } = await supabase
-      .from("tasks")
-      .update({ completed: !task.completed })
-      .eq("id", task.id)
-      .select()
-      .single();
-
-    if (error) {
-      setError(error.message);
-    } else {
-      setTasks((current) =>
-        current.map((item) =>
-          item.id === task.id ? data : item
-        )
-      );
-    }
-  }
-
+}
   async function deleteTask(id) {
     setError("");
 
-    const { error } = await supabase
-      .from("tasks")
-      .delete()
-      .eq("id", id);
+    
+    const { data, error } = await supabase
+    .from("tasks")
+    .delete()
+    .eq("id", id)
+    .select()
+    .maybeSingle();
 
-    if (error) {
-      setError(error.message);
-    } else {
-      setTasks((current) =>
-        current.filter((task) => task.id !== id)
-      );
-    }
+  if (error) {
+    setError("Delete failed: " + error.message);
+    return;
   }
+
+  if (!data) {
+    setError(
+      "No task was deleted. Check your Supabase DELETE policy."
+    );
+    return;
+  }
+
+  setTasks((current) =>
+    current.filter((task) => task.id !== id)
+  );
+}
 
   const completedCount = tasks.filter(
     (task) => task.completed
