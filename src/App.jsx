@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { supabase } from "./supabase";
 import "./App.css";
@@ -10,87 +9,125 @@ export default function App() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
+  // Load tasks from Supabase
   async function loadTasks() {
     setLoading(true);
     setError("");
 
-    const { data, error } = await supabase
-      .from("tasks")
-      .select("*")
-      .order("created_at", { ascending: false });
+    try {
+      const { data, error } = await supabase
+        .from("tasks")
+        .select("*")
+        .order("created_at", { ascending: false });
 
-    if (error) {
-      setError(error.message);
-    } else {
-      setTasks(data);
+      if (error) {
+        throw error;
+      }
+
+      setTasks(data ?? []);
+    } catch (err) {
+      console.error("Load tasks error:", err);
+      setError("Could not load tasks: " + err.message);
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   }
 
+  // Load tasks when the page opens
   useEffect(() => {
     loadTasks();
   }, []);
 
+  // Add a new task
   async function addTask(event) {
-  event.preventDefault();
+    event.preventDefault();
 
-  const cleanTitle = title.trim();
-  if (!cleanTitle || saving) return;
+    const cleanTitle = title.trim();
 
-  setSaving(true);
-  setError("");
+    if (!cleanTitle || saving) return;
 
-  try {
-    const { data, error } = await supabase
-      .from("tasks")
-      .insert({ title: cleanTitle })
-      .select()
-      .single();
+    setSaving(true);
+    setError("");
 
-    if (error) {
-      console.error("Supabase insert error:", error);
-      setError(`Supabase insert failed: ${error.message}`);
-      return;
+    try {
+      const { data, error } = await supabase
+        .from("tasks")
+        .insert({ title: cleanTitle })
+        .select()
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      setTasks((current) => [data, ...current]);
+      setTitle("");
+    } catch (err) {
+      console.error("Add task error:", err);
+      setError("Could not add task: " + err.message);
+    } finally {
+      setSaving(false);
     }
-
-    console.log("Supabase saved task:", data);
-    setTasks((current) => [data, ...current]);
-    setTitle("");
-  } catch (err) {
-    console.error("Unexpected insert error:", err);
-    setError("Unexpected error while saving the task.");
-  } finally {
-    setSaving(false);
   }
-}
+
+  // Mark a task as completed or incomplete
+  async function toggleTask(task) {
+    setError("");
+
+    try {
+      const { data, error } = await supabase
+        .from("tasks")
+        .update({ completed: !task.completed })
+        .eq("id", task.id)
+        .select()
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      setTasks((current) =>
+        current.map((item) =>
+          item.id === task.id ? data : item
+        )
+      );
+    } catch (err) {
+      console.error("Update task error:", err);
+      setError("Could not update task: " + err.message);
+    }
+  }
+
+  // Delete a task
   async function deleteTask(id) {
     setError("");
 
-    
-    const { data, error } = await supabase
-    .from("tasks")
-    .delete()
-    .eq("id", id)
-    .select()
-    .maybeSingle();
+    try {
+      const { data, error } = await supabase
+        .from("tasks")
+        .delete()
+        .eq("id", id)
+        .select()
+        .maybeSingle();
 
-  if (error) {
-    setError("Delete failed: " + error.message);
-    return;
+      if (error) {
+        throw error;
+      }
+
+      if (!data) {
+        setError(
+          "No task was deleted. Check your Supabase DELETE policy."
+        );
+        return;
+      }
+
+      setTasks((current) =>
+        current.filter((task) => task.id !== id)
+      );
+    } catch (err) {
+      console.error("Delete task error:", err);
+      setError("Could not delete task: " + err.message);
+    }
   }
-
-  if (!data) {
-    setError(
-      "No task was deleted. Check your Supabase DELETE policy."
-    );
-    return;
-  }
-
-  setTasks((current) =>
-    current.filter((task) => task.id !== id)
-  );
-}
 
   const completedCount = tasks.filter(
     (task) => task.completed
@@ -100,7 +137,9 @@ export default function App() {
     <main className="page">
       <section className="task-card">
         <p className="eyebrow">YOUR PERSONAL WORKSPACE</p>
+
         <h1>Task Manager</h1>
+
         <p className="subtitle">
           Make progress, one task at a time.
         </p>
@@ -112,13 +151,18 @@ export default function App() {
 
         <form onSubmit={addTask} className="task-form">
           <input
+            type="text"
             value={title}
             onChange={(event) => setTitle(event.target.value)}
             placeholder="What do you need to do?"
             maxLength={200}
             aria-label="New task"
           />
-          <button disabled={saving || !title.trim()}>
+
+          <button
+            type="submit"
+            disabled={saving || !title.trim()}
+          >
             {saving ? "Adding..." : "Add task"}
           </button>
         </form>
@@ -142,9 +186,10 @@ export default function App() {
                 <label className="task-label">
                   <input
                     type="checkbox"
-                    checked={task.completed}
+                    checked={Boolean(task.completed)}
                     onChange={() => toggleTask(task)}
                   />
+
                   <span
                     className={
                       task.completed ? "completed" : ""
@@ -155,6 +200,7 @@ export default function App() {
                 </label>
 
                 <button
+                  type="button"
                   className="delete-button"
                   onClick={() => deleteTask(task.id)}
                   aria-label={`Delete ${task.title}`}
@@ -167,6 +213,7 @@ export default function App() {
         )}
 
         <button
+          type="button"
           className="refresh-button"
           onClick={loadTasks}
           disabled={loading}
