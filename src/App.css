@@ -1,0 +1,154 @@
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: Inter, system-ui, Arial, sans-serif;
+  background: #f3f5fb;
+  color: #20243a;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+.page {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+
+.task-card {
+  width: 100%;
+  max-width: 650px;
+  padding: 32px;
+  border-radius: 20px;
+  background: white;
+  box-shadow: 0 12px 40px #20243a12;
+}
+
+.eyebrow {
+  color: #635bdb;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+}
+
+h1 {
+  margin: 12px 0;
+  font-size: 36px;
+}
+
+.subtitle {
+  color: #74788c;
+}
+
+.stats {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 24px 0;
+  color: #666b80;
+  font-size: 14px;
+}
+
+.task-form {
+  display: flex;
+  gap: 10px;
+}
+
+.task-form input {
+  flex: 1;
+  min-width: 0;
+  padding: 13px;
+  border: 1px solid #dfe2ec;
+  border-radius: 10px;
+}
+
+button {
+  cursor: pointer;
+  border: 0;
+  border-radius: 10px;
+  padding: 12px 16px;
+  background: #635bdb;
+  color: white;
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.task-list {
+  list-style: none;
+  padding: 0;
+  margin: 24px 0;
+}
+
+.task-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 15px 0;
+  border-bottom: 1px solid #edf0f5;
+}
+
+.task-label {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  overflow-wrap: anywhere;
+}
+
+.task-label input {
+  accent-color: #635bdb;
+}
+
+.completed {
+  color: #9296a7;
+  text-decoration: line-through;
+}
+
+.delete-button {
+  background: #fff0f0;
+  color: #bf3535;
+}
+
+.refresh-button {
+  margin-top: 8px;
+  background: #ecebff;
+  color: #5148c8;
+}
+
+.empty {
+  padding: 24px 0;
+  color: #74788c;
+  text-align: center;
+}
+
+.error {
+  padding: 12px;
+  border-radius: 8px;
+  background: #fff0f0;
+  color: #b42318;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 480px) {
+  .task-card {
+    padding: 22px;
+  }
+
+  h1 {
+    font-size: 29px;
+  }
+
+  .task-form {
+    flex-direction: column;
+  }
+}
